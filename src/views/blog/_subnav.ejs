@@ -1,0 +1,15 @@
+<nav class="subnav" aria-label="Blog sections">
+  <a href="/admin/blog" class="<%= sub === 'posts' ? 'on' : '' %>">Posts</a>
+  <% if (can("taxonomy.manage")) { %>
+    <a href="/admin/blog/categories" class="<%= sub === 'categories' ? 'on' : '' %>">Categories</a>
+    <a href="/admin/blog/tags" class="<%= sub === 'tags' ? 'on' : '' %>">Tags</a>
+    <a href="/admin/blog/authors" class="<%= sub === 'authors' ? 'on' : '' %>">Authors</a>
+  <% } %>
+  <% if (can("media.upload")) { %>
+    <a href="/admin/blog/media" class="<%= sub === 'media' ? 'on' : '' %>">Media</a>
+  <% } %>
+  <span class="spacer"></span>
+  <% if (can("posts.create")) { %>
+    <a href="/admin/blog/new" class="btn btn-primary btn-sm" style="color:#fff;border:none">+ New post</a>
+  <% } %>
+</nav>

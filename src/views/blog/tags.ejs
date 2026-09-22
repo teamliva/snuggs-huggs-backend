@@ -1,0 +1,51 @@
+<%- include("../partials/head") %>
+<%- include("../partials/nav") %>
+<main>
+  <div class="wrap">
+    <h1>Tags</h1>
+    <p class="sub">Tags group related articles. Tag pages are kept out of search results (they're thin by nature) but stay crawlable.</p>
+    <%- include("_subnav", { sub: "tags" }) %>
+    <% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+    <% if (error) { %><div class="flash err"><%= error %></div><% } %>
+
+    <div class="card"><div class="inner">
+      <form method="post" action="/admin/blog/tags" class="row three" style="align-items:end;margin:0">
+        <div><label for="name">New tag</label><input id="name" name="name" type="text" required maxlength="60" placeholder="e.g. caregiver tips" /></div>
+        <div><label for="slug">Slug</label><input id="slug" name="slug" type="text" maxlength="60" placeholder="auto" /></div>
+        <div><button class="btn btn-primary" type="submit">Add tag</button></div>
+      </form>
+    </div></div>
+
+    <div class="card">
+      <% if (!items.length) { %>
+        <div class="empty"><strong>No tags yet.</strong><p class="muted" style="margin:6px 0 0">Tags typed in the post editor are created automatically.</p></div>
+      <% } else { %>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Name / slug</th><th>Posts</th><th></th></tr></thead>
+          <tbody>
+            <% items.forEach(function (t) { %>
+              <tr>
+                <td>
+                  <form method="post" action="/admin/blog/tags" style="display:flex;gap:8px;flex-wrap:wrap">
+                    <input type="hidden" name="id" value="<%= t._id %>" />
+                    <input name="name" type="text" value="<%= t.name %>" maxlength="60" aria-label="Name" required style="max-width:240px" />
+                    <input name="slug" type="text" value="<%= t.slug %>" maxlength="60" aria-label="Slug" style="max-width:220px" />
+                    <button class="btn btn-ghost btn-sm" type="submit">Save</button>
+                  </form>
+                </td>
+                <td><%= t.count %></td>
+                <td style="text-align:right">
+                  <form method="post" action="/admin/blog/tags/<%= t._id %>/delete" onsubmit="return confirm('Delete this tag? It will be removed from <%= t.count %> post(s).')" style="display:inline">
+                    <button class="btn-danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table></div>
+      <% } %>
+    </div>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<%- include("../partials/head") %>
+<%- include("../partials/nav") %>
+
+<main>
+  <div class="wrap">
+    <h1>Blog</h1>
+    <p class="sub"><%= total %> post<%= total === 1 ? "" : "s" %><%= admin.role === "author" ? " written by you" : "" %></p>
+
+    <%- include("_subnav", { sub: "posts" }) %>
+    <% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+
+    <div class="toolbar">
+      <div class="filters" style="margin:0">
+        <a href="/admin/blog<%= q ? `?q=${encodeURIComponent(q)}` : "" %>" class="<%= !status ? 'on' : '' %>">All</a>
+        <% statuses.forEach(function (s) { %>
+          <a href="/admin/blog?status=<%= s %><%= q ? `&q=${encodeURIComponent(q)}` : "" %>" class="<%= status === s ? 'on' : '' %>"><%= s %></a>
+        <% }); %>
+      </div>
+      <form method="get" action="/admin/blog" role="search" style="margin-left:auto">
+        <% if (status) { %><input type="hidden" name="status" value="<%= status %>" /><% } %>
+        <label for="q" class="sr-only" style="position:absolute;left:-9999px">Search posts</label>
+        <input id="q" type="search" name="q" value="<%= q %>" placeholder="Search titles…" />
+        <button class="btn btn-ghost btn-sm" type="submit">Search</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <% if (!posts.length) { %>
+        <div class="empty">
+          <p style="margin:0 0 6px"><strong><%= q || status ? "No posts match." : "No posts yet." %></strong></p>
+          <% if (!q && !status && can("posts.create")) { %>
+            <p class="muted" style="margin:0 0 14px">Write the first article — it'll appear on the website as soon as you publish it.</p>
+            <a class="btn btn-primary" href="/admin/blog/new">Write a post</a>
+          <% } %>
+        </div>
+      <% } else { %>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr><th>Title</th><th>Status</th><th>Category</th><th>Author</th><th>Updated</th><th></th></tr>
+            </thead>
+            <tbody>
+              <% posts.forEach(function (p) { %>
+                <tr>
+                  <td style="max-width:380px">
+                    <% if (p.editable) { %><a href="/admin/blog/<%= p._id %>/edit"><strong><%= p.title %></strong></a><% } else { %><strong><%= p.title %></strong><% } %>
+                    <% if (p.featured) { %> <span class="pill s-contacted">featured</span><% } %>
+                    <br /><span class="muted mono">/blog/<%= p.slug %></span>
+                  </td>
+                  <td>
+                    <span class="pill s-<%= p.display %>"><%= p.display %></span>
+                    <% if (p.display === "scheduled") { %><br /><span class="muted"><%= new Date(p.publishedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) %></span><% } %>
+                  </td>
+                  <td><%= p.category?.name || "—" %></td>
+                  <td><%= p.author?.name || "—" %></td>
+                  <td class="muted" style="white-space:nowrap"><%= new Date(p.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) %></td>
+                  <td style="text-align:right;white-space:nowrap">
+                    <% if (p.editable) { %><a class="btn btn-ghost btn-sm" href="/admin/blog/<%= p._id %>/edit">Edit</a><% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% if (pages > 1) { %>
+          <div class="pager">
+            <% for (let i = 1; i <= pages; i++) { %>
+              <a class="btn btn-sm <%= i === page ? 'btn-primary' : 'btn-ghost' %>" href="/admin/blog?page=<%= i %><%= status ? `&status=${status}` : "" %><%= q ? `&q=${encodeURIComponent(q)}` : "" %>"><%= i %></a>
+            <% } %>
+          </div>
+        <% } %>
+      <% } %>
+    </div>
+  </div>
+</main>
+</body>
+</html>

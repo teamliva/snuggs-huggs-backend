@@ -1,0 +1,25 @@
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="/admin">Snuggs <span>&amp;</span> Huggs <span>Admin</span></a>
+
+    <nav class="tabs" aria-label="Admin sections">
+      <% if (can("leads.manage")) { %>
+        <a href="/admin" class="<%= active === 'leads' ? 'on' : '' %>">Enquiries</a>
+      <% } %>
+      <a href="/admin/blog" class="<%= active === 'blog' ? 'on' : '' %>">Blog</a>
+      <% if (can("content.manage")) { %>
+        <a href="/admin/testimonials" class="<%= active === 'testimonials' ? 'on' : '' %>">Testimonials</a>
+        <a href="/admin/credentials" class="<%= active === 'credentials' ? 'on' : '' %>">Credentials</a>
+      <% } %>
+      <% if (can("users.manage")) { %>
+        <a href="/admin/users" class="<%= active === 'users' ? 'on' : '' %>">Users</a>
+      <% } %>
+    </nav>
+
+    <span class="whoami" title="<%= admin?.email %>"><%= admin?.name || admin?.email %> · <%= admin?.role %></span>
+
+    <form method="post" action="/admin/logout" style="margin:0">
+      <button class="signout" type="submit">Sign out</button>
+    </form>
+  </div>
+</header>

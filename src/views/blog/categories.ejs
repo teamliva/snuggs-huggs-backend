@@ -1,0 +1,60 @@
+<%- include("../partials/head") %>
+<%- include("../partials/nav") %>
+<main>
+  <div class="wrap">
+    <h1>Categories</h1>
+    <p class="sub">Each category gets its own page at <span class="mono">/blog/category/&lt;slug&gt;</span>, shown once it has a published post.</p>
+    <%- include("_subnav", { sub: "categories" }) %>
+    <% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+    <% if (error) { %><div class="flash err"><%= error %></div><% } %>
+
+    <div class="card"><div class="inner">
+      <h2>Add a category</h2>
+      <form method="post" action="/admin/blog/categories">
+        <div class="row three">
+          <div><label for="name">Name</label><input id="name" name="name" type="text" required maxlength="80" placeholder="e.g. Dementia care" /></div>
+          <div><label for="slug">Slug</label><input id="slug" name="slug" type="text" maxlength="60" placeholder="auto" /></div>
+          <div><label for="sortOrder">Order</label><input id="sortOrder" name="sortOrder" type="number" value="0" /></div>
+        </div>
+        <div class="row"><div><label for="description">Description</label><textarea id="description" name="description" maxlength="400" placeholder="Shown on the category page and used as its meta description."></textarea></div></div>
+        <button class="btn btn-primary" type="submit">Add category</button>
+      </form>
+    </div></div>
+
+    <div class="card">
+      <% if (!items.length) { %>
+        <div class="empty"><strong>No categories yet.</strong></div>
+      <% } else { %>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Name &amp; description</th><th>Slug</th><th>Order</th><th>Posts</th><th></th></tr></thead>
+          <tbody>
+            <% items.forEach(function (c) { %>
+              <tr>
+                <td colspan="3" style="padding:0">
+                  <form method="post" action="/admin/blog/categories" style="display:grid;grid-template-columns:2fr 1fr 70px;gap:10px;padding:12px 14px">
+                    <input type="hidden" name="id" value="<%= c._id %>" />
+                    <div>
+                      <input name="name" type="text" value="<%= c.name %>" maxlength="80" aria-label="Name" required />
+                      <textarea name="description" maxlength="400" aria-label="Description" style="margin-top:6px;min-height:54px"><%= c.description %></textarea>
+                    </div>
+                    <input name="slug" type="text" value="<%= c.slug %>" maxlength="60" aria-label="Slug" />
+                    <div><input name="sortOrder" type="number" value="<%= c.sortOrder %>" aria-label="Order" />
+                      <button class="btn btn-ghost btn-sm" type="submit" style="margin-top:6px">Save</button></div>
+                  </form>
+                </td>
+                <td><%= c.count %></td>
+                <td style="text-align:right">
+                  <form method="post" action="/admin/blog/categories/<%= c._id %>/delete" onsubmit="return confirm('Delete this category?')" style="display:inline">
+                    <button class="btn-danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table></div>
+      <% } %>
+    </div>
+  </div>
+</main>
+</body>
+</html>

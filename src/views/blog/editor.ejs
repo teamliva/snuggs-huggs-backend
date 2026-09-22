@@ -1,0 +1,314 @@
+<%- include("../partials/head") %>
+<link rel="stylesheet" href="/admin/vendor/easymde/easymde.min.css" />
+<%- include("../partials/nav") %>
+
+<%
+  const fe = (errors && errors.fields) || {};
+  const err = (k) => fe[k] ? `<div class="field-error">${fe[k].replace(/</g, "&lt;")}</div>` : "";
+  const cls = (k) => fe[k] ? "has-error" : "";
+  const isPublished = post && post.status === "published";
+  const action = post ? `/admin/blog/${post.id}` : "/admin/blog/new";
+%>
+
+<main>
+  <div class="wrap" style="max-width:1320px">
+    <p class="muted" style="margin-bottom:10px"><a href="/admin/blog">&larr; All posts</a></p>
+
+    <% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+    <% if (errors) { %><div class="flash err" role="alert"><%= errors.message %></div><% } %>
+
+    <form id="post-form" method="post" action="<%= action %>" novalidate
+          data-post-id="<%= post ? post.id : "" %>"
+          data-published-once="<%= post && (post.publishedAt || isPublished) ? "1" : "" %>"
+          data-site-url="<%= siteUrl %>"
+          data-ai="<%= aiEnabled ? "1" : "" %>">
+
+      <div class="editor-grid">
+        <!-- ============ Main column ============ -->
+        <div>
+          <div class="<%= cls('title') %>">
+            <label for="title" style="position:absolute;left:-9999px">Title</label>
+            <input id="title" name="title" type="text" class="title-input" required maxlength="160"
+                   placeholder="Article title" value="<%= v.title %>" autocomplete="off" />
+            <%- err("title") %>
+          </div>
+
+          <div class="slug-row <%= cls('slug') %>">
+            <label for="slug" style="margin:0;text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)"><%= siteUrl.replace(/^https?:\/\//, "") %>/blog/</label>
+            <input id="slug" name="slug" type="text" maxlength="100" value="<%= v.slug %>" placeholder="auto-from-title"
+                   pattern="[a-z0-9]+(-[a-z0-9]+)*" autocomplete="off" />
+            <button type="button" class="btn btn-ghost btn-sm" id="slug-regen" title="Regenerate from title">↻ From title</button>
+            <% if (post && post.previousSlugs && post.previousSlugs.length) { %>
+              <div class="hint" style="width:100%">Old URLs that redirect here: <span class="mono"><%= post.previousSlugs.map((s) => "/blog/" + s).join(", ") %></span></div>
+            <% } %>
+            <div id="slug-note" class="hint" style="width:100%" hidden>This post has been published. Changing the slug keeps the old URL working with a permanent (301) redirect.</div>
+            <%- err("slug") %>
+          </div>
+
+          <div class="row <%= cls('excerpt') %>">
+            <label for="excerpt">Excerpt <span class="counter" data-count-for="excerpt" data-min="80" data-max="220"></span></label>
+            <textarea id="excerpt" name="excerpt" maxlength="400" style="min-height:70px"
+                      placeholder="One or two sentences shown on blog cards. Leave blank to use the opening paragraph."><%= v.excerpt %></textarea>
+            <%- err("excerpt") %>
+          </div>
+
+          <div class="row <%= cls('content') %>">
+            <label for="content">Article</label>
+            <textarea id="content" name="content"><%= v.content %></textarea>
+            <div class="hint">Markdown. Use <strong>H2</strong> for main sections and <strong>H3</strong> for sub-points — the article title is already the page's H1.</div>
+            <%- err("content") %>
+          </div>
+        </div>
+
+        <!-- ============ Sidebar ============ -->
+        <aside class="side" aria-label="Post settings">
+
+          <!-- Publish -->
+          <div class="panel">
+            <div class="panel-h">Publish</div>
+            <div class="pb">
+              <div class="status-line">
+                <span>Status</span>
+                <span class="pill s-<%= post ? post.display : "draft" %>"><%= post ? post.display : "new draft" %></span>
+              </div>
+
+              <% if (canPublish) { %>
+                <div class="row">
+                  <label for="publishedAt">Publish date</label>
+                  <input id="publishedAt" name="publishedAt" type="datetime-local" value="<%= v.publishedAt %>" />
+                  <div class="hint">Blank = now. A future date schedules the post.</div>
+                </div>
+                <div class="row">
+                  <label for="modifiedAt">“Updated” date</label>
+                  <input id="modifiedAt" name="modifiedAt" type="datetime-local" value="<%= v.modifiedAt %>" />
+                  <div class="hint">Set automatically when a live post's content changes.</div>
+                </div>
+                <div class="check">
+                  <input id="featured" name="featured" type="checkbox" <%= v.featured ? "checked" : "" %> />
+                  <label for="featured">Feature at the top of the blog</label>
+                </div>
+              <% } else { %>
+                <p class="hint" style="margin-top:0">You can save drafts. An editor or admin publishes them.</p>
+              <% } %>
+
+              <div class="actions" style="margin-top:12px">
+                <% if (canPublish) { %>
+                  <button class="btn btn-primary" type="submit" name="intent" value="publish" id="publish-btn">
+                    <%= isPublished ? "Update" : "Publish" %>
+                  </button>
+                <% } %>
+                <button class="btn btn-navy" type="submit" name="intent" value="<%= isPublished ? "save" : "draft" %>">
+                  <%= isPublished ? "Save changes" : "Save draft" %>
+                </button>
+                <% if (post) { %>
+                  <a class="btn btn-ghost" href="/admin/blog/<%= post.id %>/preview" target="_blank" rel="noopener" id="preview-link">Preview ↗</a>
+                  <% if (isPublished && post.display === "published") { %>
+                    <a class="btn btn-ghost" href="<%= frontendUrl %>/blog/<%= post.slug %>" target="_blank" rel="noopener">View live ↗</a>
+                  <% } %>
+                  <% if (isPublished && canPublish) { %>
+                    <button class="btn btn-ghost" type="submit" name="intent" value="unpublish" data-confirm="Unpublish this post? It will disappear from the website.">Unpublish</button>
+                  <% } %>
+                <% } else { %>
+                  <p class="hint">Save once to enable preview.</p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEO health -->
+          <details class="panel" open>
+            <summary>SEO &amp; readability</summary>
+            <div class="pb">
+              <div class="seo-score" id="seo-score" aria-live="polite">
+                <div class="seo-dial"><span id="seo-num">–</span></div>
+                <div>
+                  <div class="seo-label" id="seo-label">Analysing…</div>
+                  <div class="muted" id="seo-counts"></div>
+                </div>
+              </div>
+              <div class="serp" aria-label="Search result preview">
+                <div class="u" id="serp-url"></div>
+                <div class="t" id="serp-title"></div>
+                <div class="d" id="serp-desc"></div>
+              </div>
+              <ul class="seo-checks" id="seo-checks"></ul>
+              <button type="button" class="seo-toggle" id="seo-show-all">Show passed checks</button>
+            </div>
+          </details>
+
+          <!-- SEO fields -->
+          <details class="panel" <%= (fe.seoTitle || fe.seoDescription || fe.canonicalUrl) ? "open" : "" %>>
+            <summary>Search appearance</summary>
+            <div class="pb">
+              <button type="button" class="btn btn-ghost btn-sm" id="auto-seo" style="width:100%;margin-bottom:12px">
+                ✨ Suggest SEO from article<%= aiEnabled ? " (AI)" : "" %>
+              </button>
+              <div class="hint" id="auto-seo-note" hidden></div>
+
+              <div class="row <%= cls('focusKeyword') %>">
+                <label for="focusKeyword">Focus keyword</label>
+                <input id="focusKeyword" name="focusKeyword" type="text" maxlength="80" value="<%= v.focusKeyword %>" placeholder="e.g. dementia care at home" />
+                <div class="hint">The main thing a reader would search to find this.</div>
+              </div>
+              <div class="row">
+                <label for="secondaryKeywords">Related keywords</label>
+                <input id="secondaryKeywords" name="secondaryKeywords" type="text" value="<%= v.secondaryKeywords %>" placeholder="comma, separated" />
+              </div>
+              <div class="row <%= cls('seoTitle') %>">
+                <label for="seoTitle">SEO title <span class="counter" data-count-for="seoTitle" data-min="30" data-max="60" data-auto></span></label>
+                <input id="seoTitle" name="seoTitle" type="text" maxlength="120" value="<%= v.seoTitle %>" />
+                <div class="hint">Blank = auto from the title.</div>
+                <%- err("seoTitle") %>
+              </div>
+              <div class="row <%= cls('seoDescription') %>">
+                <label for="seoDescription">Meta description <span class="counter" data-count-for="seoDescription" data-min="120" data-max="160" data-auto></span></label>
+                <textarea id="seoDescription" name="seoDescription" maxlength="320" style="min-height:80px"><%= v.seoDescription %></textarea>
+                <div class="hint">Blank = auto from the excerpt or first paragraph.</div>
+                <%- err("seoDescription") %>
+              </div>
+              <div class="row <%= cls('canonicalUrl') %>">
+                <label for="canonicalUrl">Canonical URL</label>
+                <input id="canonicalUrl" name="canonicalUrl" type="url" value="<%= v.canonicalUrl %>" placeholder="Blank = this post's own URL" />
+                <div class="hint">Only set this if the article was first published elsewhere.</div>
+                <%- err("canonicalUrl") %>
+              </div>
+              <div class="row">
+                <label>Robots</label>
+                <input type="hidden" name="robotsIndex" value="false" />
+                <div class="check"><input id="robotsIndex" name="robotsIndex" type="checkbox" value="true" <%= v.robotsIndex ? "checked" : "" %> /><label for="robotsIndex">Allow search engines to index</label></div>
+                <input type="hidden" name="robotsFollow" value="false" />
+                <div class="check"><input id="robotsFollow" name="robotsFollow" type="checkbox" value="true" <%= v.robotsFollow ? "checked" : "" %> /><label for="robotsFollow">Follow links in this post</label></div>
+              </div>
+              <div class="row">
+                <label for="schemaType">Schema type</label>
+                <select id="schemaType" name="schemaType">
+                  <% ["BlogPosting", "Article", "NewsArticle"].forEach(function (t) { %>
+                    <option value="<%= t %>" <%= v.schemaType === t ? "selected" : "" %>><%= t %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+          </details>
+
+          <!-- Organisation -->
+          <details class="panel" open>
+            <summary>Category, tags &amp; author</summary>
+            <div class="pb">
+              <div class="row">
+                <label for="category">Category</label>
+                <select id="category" name="category">
+                  <option value="">— None —</option>
+                  <% categories.forEach(function (c) { %>
+                    <option value="<%= c._id %>" <%= String(c._id) === v.category ? "selected" : "" %>><%= c.name %></option>
+                  <% }); %>
+                </select>
+                <% if (!categories.length && can("taxonomy.manage")) { %><div class="hint"><a href="/admin/blog/categories">Create a category</a> first.</div><% } %>
+              </div>
+              <div class="row">
+                <label for="tags">Tags</label>
+                <input id="tags" name="tags" type="text" value="<%= v.tags %>" list="tag-list" placeholder="comma, separated" />
+                <datalist id="tag-list"><% tagNames.forEach(function (t) { %><option value="<%= t %>"></option><% }); %></datalist>
+                <div class="hint"><%= can("taxonomy.manage") ? "New tags are created automatically." : "Only existing tags are kept." %></div>
+              </div>
+              <div class="row">
+                <label for="author">Author</label>
+                <select id="author" name="author">
+                  <option value="">— None —</option>
+                  <% authors.forEach(function (a) { %>
+                    <option value="<%= a._id %>" <%= String(a._id) === v.author ? "selected" : "" %>><%= a.name %></option>
+                  <% }); %>
+                </select>
+                <% if (!authors.length && can("taxonomy.manage")) { %><div class="hint"><a href="/admin/blog/authors">Add an author profile</a> for the byline.</div><% } %>
+              </div>
+            </div>
+          </details>
+
+          <!-- Featured image -->
+          <details class="panel" open>
+            <summary>Featured image</summary>
+            <div class="pb">
+              <div class="fi-preview" id="fi-preview">
+                <% if (v.featuredImageUrl) { %><img src="<%= v.featuredImageUrl %>" alt="" /><% } else { %>No image<% } %>
+              </div>
+              <input type="hidden" id="featuredImageUrl" name="featuredImageUrl" value="<%= v.featuredImageUrl %>" />
+              <div class="row <%= cls('featuredImageAlt') %>">
+                <label for="featuredImageAlt">Alt text</label>
+                <input id="featuredImageAlt" name="featuredImageAlt" type="text" maxlength="250" value="<%= v.featuredImageAlt %>" placeholder="Describe what the image shows" />
+              </div>
+              <% if (can("media.upload")) { %>
+                <label class="btn btn-ghost btn-sm" style="width:100%;cursor:pointer">
+                  Upload image
+                  <input type="file" id="fi-upload" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" hidden />
+                </label>
+              <% } %>
+              <button type="button" class="btn btn-ghost btn-sm" id="fi-clear" style="width:100%;margin-top:6px">Remove</button>
+              <% if (media.length) { %>
+                <div class="hint" style="margin-top:10px">Or choose from the library:</div>
+                <div class="media-pick">
+                  <% media.forEach(function (m) { %>
+                    <button type="button" data-pick-url="<%= m.url %>" data-pick-alt="<%= m.alt %>" title="<%= m.alt || "Untitled image" %>"><img src="<%= m.url %>" alt="" loading="lazy" /></button>
+                  <% }); %>
+                </div>
+              <% } %>
+            </div>
+          </details>
+
+          <!-- Internal links -->
+          <details class="panel">
+            <summary>Internal link suggestions</summary>
+            <div class="pb">
+              <p class="hint" style="margin-top:0">Place the cursor (or select the words to link) in the article, then insert.</p>
+              <button type="button" class="btn btn-ghost btn-sm" id="find-links" style="width:100%">Find related pages</button>
+              <ul class="suggestions" id="link-suggestions"></ul>
+            </div>
+          </details>
+
+          <!-- Social -->
+          <details class="panel">
+            <summary>Social sharing</summary>
+            <div class="pb">
+              <div class="row"><label for="ogTitle">Share title</label><input id="ogTitle" name="ogTitle" type="text" maxlength="120" value="<%= v.ogTitle %>" placeholder="Blank = SEO title" /></div>
+              <div class="row"><label for="ogDescription">Share description</label><textarea id="ogDescription" name="ogDescription" maxlength="320" style="min-height:70px" placeholder="Blank = meta description"><%= v.ogDescription %></textarea></div>
+              <div class="row <%= cls('ogImage') %>"><label for="ogImage">Share image URL</label><input id="ogImage" name="ogImage" type="text" maxlength="500" value="<%= v.ogImage %>" placeholder="Blank = featured image" /><%- err("ogImage") %></div>
+              <div class="row">
+                <label for="twitterCard">X / Twitter card</label>
+                <select id="twitterCard" name="twitterCard">
+                  <option value="summary_large_image" <%= v.twitterCard === "summary_large_image" ? "selected" : "" %>>Large image</option>
+                  <option value="summary" <%= v.twitterCard === "summary" ? "selected" : "" %>>Small image</option>
+                </select>
+              </div>
+              <div class="row"><label for="twitterTitle">X / Twitter title</label><input id="twitterTitle" name="twitterTitle" type="text" maxlength="120" value="<%= v.twitterTitle %>" placeholder="Blank = share title" /></div>
+              <div class="row"><label for="twitterDescription">X / Twitter description</label><textarea id="twitterDescription" name="twitterDescription" maxlength="320" style="min-height:60px" placeholder="Blank = share description"><%= v.twitterDescription %></textarea></div>
+            </div>
+          </details>
+
+          <!-- Danger zone -->
+          <% if (post) { %>
+            <div class="panel">
+              <div class="panel-h">More</div>
+              <div class="pb actions">
+                <% if (can("posts.create")) { %>
+                  <button class="btn btn-ghost btn-sm" type="submit" form="dup-form">Duplicate post</button>
+                <% } %>
+                <% if (canDelete) { %>
+                  <button class="btn-danger" type="submit" form="del-form">Delete post</button>
+                <% } %>
+              </div>
+            </div>
+          <% } %>
+        </aside>
+      </div>
+    </form>
+
+    <% if (post) { %>
+      <form id="dup-form" method="post" action="/admin/blog/<%= post.id %>/duplicate"></form>
+      <form id="del-form" method="post" action="/admin/blog/<%= post.id %>/delete"
+            data-confirm="Delete “<%= post.title %>” permanently? This can't be undone."></form>
+    <% } %>
+  </div>
+</main>
+
+<script src="/admin/vendor/easymde/easymde.min.js"></script>
+<script src="/admin/assets/editor.js"></script>
+</body>
+</html>

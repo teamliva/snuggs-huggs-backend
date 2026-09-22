@@ -1,0 +1,63 @@
+<%- include("../partials/head") %>
+<%- include("../partials/nav") %>
+<main>
+  <div class="wrap">
+    <h1>Media library</h1>
+    <p class="sub">JPEG, PNG, WebP, AVIF or GIF, up to <%= maxMb %> MB. The website resizes and converts images automatically.</p>
+    <%- include("_subnav", { sub: "media" }) %>
+    <% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+    <% if (error) { %><div class="flash err"><%= error %></div><% } %>
+
+    <div class="card"><div class="inner">
+      <form id="upload-form" class="row three" style="align-items:end;margin:0">
+        <div><label for="file">Image</label><input id="file" name="file" type="file" accept="image/jpeg,image/png,image/webp,image/avif,image/gif" required /></div>
+        <div><label for="alt">Alt text</label><input id="alt" name="alt" type="text" maxlength="250" placeholder="Describe what it shows" /></div>
+        <div><button class="btn btn-primary" type="submit">Upload</button> <span id="upload-status" class="muted"></span></div>
+      </form>
+    </div></div>
+
+    <% if (!items.length) { %>
+      <div class="card"><div class="empty"><strong>No images yet.</strong></div></div>
+    <% } else { %>
+      <div class="media-grid">
+        <% items.forEach(function (m) { %>
+          <div class="media-card">
+            <img src="<%= m.url %>" alt="<%= m.alt %>" loading="lazy" />
+            <div class="mb">
+              <form method="post" action="/admin/blog/media/<%= m._id %>" style="display:flex;gap:6px">
+                <input name="alt" type="text" value="<%= m.alt %>" maxlength="250" aria-label="Alt text" placeholder="Alt text missing" style="<%= m.alt ? "" : "border-color:var(--danger)" %>" />
+                <button class="btn btn-ghost btn-sm" type="submit">Save</button>
+              </form>
+              <span class="muted mono" title="<%= m.url %>"><%= m.width %>×<%= m.height %> · <%= Math.round(m.size / 1024) %> KB</span>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <button class="btn-danger" type="button" data-copy="<%= m.url %>" style="color:var(--navy)">Copy URL</button>
+                <% if (can("media.delete")) { %>
+                  <form method="post" action="/admin/blog/media/<%= m._id %>/delete" onsubmit="return confirm('Delete this image?')" style="margin:0">
+                    <button class="btn-danger" type="submit">Delete</button>
+                  </form>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</main>
+<script>
+  document.getElementById("upload-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const status = document.getElementById("upload-status");
+    status.textContent = "Uploading…";
+    const res = await fetch("/api/admin/blog/media", { method: "POST", body: new FormData(e.target) });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) location.href = "/admin/blog/media?saved=1";
+    else status.textContent = data.error || "Upload failed";
+  });
+  document.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(b.dataset.copy);
+    b.textContent = "Copied ✓";
+  }));
+</script>
+</body>
+</html>

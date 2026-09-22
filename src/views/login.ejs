@@ -1,0 +1,45 @@
+<%- include("partials/head") %>
+
+<main style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px">
+  <div style="width:100%;max-width:400px">
+    <h1 style="text-align:center;margin-bottom:6px">Snuggs &amp; Huggs</h1>
+    <p class="sub" style="text-align:center">Admin sign in</p>
+
+    <div class="card">
+      <div class="inner">
+        <% if (error) { %>
+          <div class="flash err" role="alert"><%= error %></div>
+        <% } %>
+
+        <form method="post" action="/admin/login">
+          <input type="hidden" name="next" value="<%= next %>" />
+
+          <div class="row">
+            <div>
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="username"
+                     required value="<%= email %>" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="password">Password</label>
+              <input id="password" name="password" type="password"
+                     autocomplete="current-password" required />
+            </div>
+          </div>
+
+          <button class="btn btn-primary" type="submit" style="width:100%">Sign in</button>
+        </form>
+      </div>
+    </div>
+
+    <p class="muted" style="text-align:center">
+      No account yet? Run <span class="mono">npm run create-admin</span> in the backend folder.
+    </p>
+  </div>
+</main>
+
+</body>
+</html>

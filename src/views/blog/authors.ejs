@@ -1,0 +1,66 @@
+<%- include("../partials/head") %>
+<%- include("../partials/nav") %>
+<% const e = editing || {}; %>
+<main>
+  <div class="wrap">
+    <h1>Authors</h1>
+    <p class="sub">Public bylines. Shown on articles and used in Article structured data — real names and genuine credentials only.</p>
+    <%- include("_subnav", { sub: "authors" }) %>
+    <% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+    <% if (error) { %><div class="flash err"><%= error %></div><% } %>
+
+    <div class="card"><div class="inner">
+      <h2><%= editing ? `Edit ${e.name}` : "Add an author" %></h2>
+      <form method="post" action="/admin/blog/authors">
+        <% if (editing) { %><input type="hidden" name="id" value="<%= e._id %>" /><% } %>
+        <div class="row three">
+          <div><label for="name">Name</label><input id="name" name="name" type="text" required maxlength="120" value="<%= e.name || "" %>" /></div>
+          <div><label for="jobTitle">Role / title</label><input id="jobTitle" name="jobTitle" type="text" maxlength="120" value="<%= e.jobTitle || "" %>" placeholder="e.g. Founder & Owner" /></div>
+          <div><label for="slug">Slug</label><input id="slug" name="slug" type="text" maxlength="60" value="<%= e.slug || "" %>" placeholder="auto" /></div>
+        </div>
+        <div class="row"><div><label for="bio">Short bio</label><textarea id="bio" name="bio" maxlength="1200"><%= e.bio || "" %></textarea></div></div>
+        <div class="row two">
+          <div><label for="avatarUrl">Photo URL</label><input id="avatarUrl" name="avatarUrl" type="text" maxlength="500" value="<%= e.avatarUrl || "" %>" placeholder="/uploads/… (upload in Media)" /></div>
+          <div><label for="url">Website / profile</label><input id="url" name="url" type="url" maxlength="500" value="<%= e.url || "" %>" placeholder="https://…" /></div>
+        </div>
+        <div class="row two">
+          <div><label for="sameAs">Other profiles</label><textarea id="sameAs" name="sameAs" style="min-height:60px" placeholder="One URL per line (LinkedIn, etc.)"><%= (e.sameAs || []).join("\n") %></textarea></div>
+          <div><label for="user">Linked login account</label>
+            <select id="user" name="user"><option value="">— None —</option>
+              <% users.forEach(function (u) { %><option value="<%= u._id %>" <%= String(e.user || "") === String(u._id) ? "selected" : "" %>><%= u.name || u.email %></option><% }); %>
+            </select>
+            <div class="hint">New posts by that user default to this byline.</div></div>
+        </div>
+        <button class="btn btn-primary" type="submit"><%= editing ? "Save author" : "Add author" %></button>
+        <% if (editing) { %><a class="btn btn-ghost" href="/admin/blog/authors">Cancel</a><% } %>
+      </form>
+    </div></div>
+
+    <div class="card">
+      <% if (!items.length) { %>
+        <div class="empty"><strong>No authors yet.</strong></div>
+      <% } else { %>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Author</th><th>Role</th><th>Posts</th><th></th></tr></thead>
+          <tbody>
+            <% items.forEach(function (a) { %>
+              <tr>
+                <td><strong><%= a.name %></strong><br /><span class="muted mono"><%= a.slug %></span></td>
+                <td><%= a.jobTitle || "—" %></td>
+                <td><%= a.count %></td>
+                <td style="text-align:right;white-space:nowrap">
+                  <a class="btn btn-ghost btn-sm" href="/admin/blog/authors?edit=<%= a._id %>">Edit</a>
+                  <form method="post" action="/admin/blog/authors/<%= a._id %>/delete" onsubmit="return confirm('Delete this author?')" style="display:inline">
+                    <button class="btn-danger" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table></div>
+      <% } %>
+    </div>
+  </div>
+</main>
+</body>
+</html>

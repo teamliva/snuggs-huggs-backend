@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title><%= title %> · Snuggs &amp; Huggs Admin</title>
+<style>
+  :root{
+    --navy:#1B3A5C; --navy-dark:#122840; --navy-100:#E2E9F1;
+    --gold:#B8860B; --gold-50:#FBF6E9; --gold-200:#EBD79B;
+    --cream:#FDFBF6; --cream-200:#F6F1E7; --cream-400:#DED2BB;
+    --ink:#262B33; --muted:#6B7280; --danger:#C0392B; --ok:#1E7A46;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  a{color:var(--navy)}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+
+  header.bar{background:var(--navy);color:#fff}
+  header.bar .wrap{display:flex;align-items:center;gap:20px;min-height:62px;flex-wrap:wrap}
+  .brand{font-weight:700;color:#fff;text-decoration:none;white-space:nowrap}
+  .brand span{color:var(--gold-200)}
+  nav.tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+  nav.tabs a{
+    color:var(--navy-100);text-decoration:none;padding:8px 14px;border-radius:999px;
+    font-size:.92rem;min-height:40px;display:inline-flex;align-items:center;
+  }
+  nav.tabs a:hover{background:rgba(255,255,255,.1);color:#fff}
+  nav.tabs a.on{background:var(--gold);color:#fff;font-weight:600}
+  .signout{background:none;border:1px solid rgba(255,255,255,.3);color:var(--navy-100);
+    padding:8px 14px;border-radius:999px;font-size:.88rem;cursor:pointer;min-height:40px}
+  .signout:hover{border-color:#fff;color:#fff}
+
+  main{padding:34px 0 80px}
+  h1{font-size:1.6rem;margin:0 0 4px;color:var(--navy)}
+  h2{font-size:1.1rem;margin:0 0 14px;color:var(--navy)}
+  .sub{color:var(--muted);margin:0 0 24px;font-size:.95rem}
+
+  .card{background:#fff;border:1px solid var(--cream-400);border-radius:14px;
+    box-shadow:0 1px 2px rgba(26,45,76,.04);margin-bottom:22px}
+  .card .inner{padding:20px}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--cream-200);
+    font-size:.92rem;vertical-align:top}
+  th{background:var(--cream-200);color:var(--navy);font-size:.72rem;
+    text-transform:uppercase;letter-spacing:.09em}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--gold-50)}
+
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.72rem;
+    font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+  .s-new{background:#E4F0FB;color:#1B5E9C}
+  .s-contacted{background:var(--gold-50);color:#8A6508}
+  .s-consultation_booked{background:#E3F5EA;color:var(--ok)}
+  .s-closed{background:#ECEEF1;color:var(--muted)}
+  .s-spam{background:#FBE9E7;color:var(--danger)}
+  .badge-on{background:#E3F5EA;color:var(--ok)}
+  .badge-off{background:#ECEEF1;color:var(--muted)}
+
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .filters a{padding:7px 14px;border-radius:999px;border:1px solid var(--cream-400);
+    background:#fff;text-decoration:none;font-size:.86rem;color:var(--navy);
+    min-height:38px;display:inline-flex;align-items:center}
+  .filters a.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+  label{display:block;font-size:.8rem;font-weight:600;color:var(--navy);
+    margin:0 0 5px;text-transform:uppercase;letter-spacing:.05em}
+  input[type=text],input[type=email],input[type=password],input[type=number],
+  input[type=date],textarea,select{
+    width:100%;padding:11px 13px;border:1px solid var(--cream-400);border-radius:9px;
+    font:inherit;font-size:.95rem;background:#fff;color:var(--ink)}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--gold);outline-offset:1px;
+    border-color:var(--gold)}
+  textarea{min-height:96px;resize:vertical}
+  .row{display:grid;gap:14px;margin-bottom:14px}
+  @media(min-width:700px){.row.two{grid-template-columns:1fr 1fr}.row.three{grid-template-columns:2fr 1fr 1fr}}
+  .check{display:flex;align-items:center;gap:9px;margin:6px 0}
+  .check input{width:18px;height:18px;accent-color:var(--gold)}
+  .check label{margin:0;text-transform:none;letter-spacing:0;font-size:.92rem;font-weight:500}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    min-height:44px;padding:0 20px;border-radius:999px;border:none;cursor:pointer;
+    font:inherit;font-size:.92rem;font-weight:600;text-decoration:none}
+  .btn-primary{background:var(--gold);color:#fff}
+  .btn-primary:hover{background:#9A7009}
+  .btn-ghost{background:#fff;border:1px solid var(--cream-400);color:var(--navy)}
+  .btn-ghost:hover{border-color:var(--navy)}
+  .btn-danger{background:none;border:none;color:var(--danger);cursor:pointer;
+    font:inherit;font-size:.85rem;text-decoration:underline;padding:4px}
+  .btn-sm{min-height:36px;padding:0 14px;font-size:.84rem}
+
+  .flash{background:#E3F5EA;color:var(--ok);border:1px solid #BFE4CD;
+    padding:11px 16px;border-radius:10px;margin-bottom:18px;font-size:.92rem}
+  .flash.err{background:#FBE9E7;color:var(--danger);border-color:#F3C9C4}
+  .empty{padding:44px 20px;text-align:center;color:var(--muted)}
+  .muted{color:var(--muted);font-size:.86rem}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
+  .whoami{color:var(--navy-100);font-size:.8rem;white-space:nowrap;opacity:.85}
+  @media(max-width:760px){.whoami{display:none}}
+</style>
+<link rel="stylesheet" href="/admin/assets/admin.css" />
+</head>
+<body>

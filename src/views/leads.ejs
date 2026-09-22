@@ -1,0 +1,73 @@
+<%- include("partials/head") %>
+<%- include("partials/nav") %>
+
+<main>
+  <div class="wrap">
+    <h1>Enquiries</h1>
+    <p class="sub">
+      <%= total %> total<% if (byStatus.new) { %> · <strong><%= byStatus.new %> new</strong><% } %>
+    </p>
+
+    <% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+
+    <div class="filters">
+      <a href="/admin" class="<%= !status ? 'on' : '' %>">All (<%= total %>)</a>
+      <% statuses.forEach(function (s) { %>
+        <a href="/admin?status=<%= s %>" class="<%= status === s ? 'on' : '' %>">
+          <%= s.replace(/_/g, " ") %> (<%= byStatus[s] || 0 %>)
+        </a>
+      <% }); %>
+    </div>
+
+    <div class="card">
+      <% if (!leads.length) { %>
+        <div class="empty">
+          <p style="margin:0 0 6px"><strong>No enquiries<%= status ? " with this status" : "" %> yet.</strong></p>
+          <p class="muted" style="margin:0">
+            They'll appear here as soon as the website form starts sending them.
+          </p>
+        </div>
+      <% } else { %>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Received</th>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Care level</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% leads.forEach(function (l) { %>
+                <tr>
+                  <td class="muted" style="white-space:nowrap">
+                    <%= new Date(l.createdAt).toLocaleDateString("en-US",
+                        { month:"short", day:"numeric" }) %><br />
+                    <%= new Date(l.createdAt).toLocaleTimeString("en-US",
+                        { hour:"numeric", minute:"2-digit" }) %>
+                  </td>
+                  <td><strong><%= l.name %></strong></td>
+                  <td>
+                    <a href="tel:<%= l.phone.replace(/[^\d+]/g, "") %>"><%= l.phone %></a>
+                    <% if (l.email) { %><br /><span class="muted"><%= l.email %></span><% } %>
+                  </td>
+                  <td><%= l.carePlan %></td>
+                  <td><span class="pill s-<%= l.status %>"><%= l.status.replace(/_/g, " ") %></span></td>
+                  <td style="text-align:right;white-space:nowrap">
+                    <a class="btn btn-ghost btn-sm" href="/admin/leads/<%= l._id %>">Open</a>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

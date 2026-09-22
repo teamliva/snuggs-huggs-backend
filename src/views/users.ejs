@@ -1,0 +1,58 @@
+<%- include("partials/head") %>
+<%- include("partials/nav") %>
+<main>
+  <div class="wrap">
+    <h1>Users</h1>
+    <p class="sub">
+      <strong>Admin</strong>: everything, including enquiries and users.
+      <strong>Editor</strong>: publishes and manages all blog content; no enquiries.
+      <strong>Author</strong>: writes their own drafts; an editor publishes them.
+    </p>
+    <% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+    <% if (error) { %><div class="flash err"><%= error %></div><% } %>
+
+    <div class="card"><div class="inner">
+      <h2>Add a user</h2>
+      <form method="post" action="/admin/users">
+        <div class="row two">
+          <div><label for="email">Email</label><input id="email" name="email" type="email" required autocomplete="off" /></div>
+          <div><label for="name">Name</label><input id="name" name="name" type="text" maxlength="120" /></div>
+        </div>
+        <div class="row two">
+          <div><label for="password">Temporary password (12+ characters)</label><input id="password" name="password" type="password" minlength="12" required autocomplete="new-password" /></div>
+          <div><label for="role">Role</label><select id="role" name="role"><% roles.forEach(function (r) { %><option value="<%= r %>" <%= r === "author" ? "selected" : "" %>><%= r %></option><% }); %></select></div>
+        </div>
+        <button class="btn btn-primary" type="submit">Create user</button>
+      </form>
+    </div></div>
+
+    <div class="card"><div style="overflow-x:auto"><table>
+      <thead><tr><th>User</th><th>Role</th><th>Last sign-in</th><th></th></tr></thead>
+      <tbody>
+        <% users.forEach(function (u) { const me = String(u._id) === admin.id; %>
+          <tr>
+            <td><strong><%= u.name || u.email %></strong><%= me ? " (you)" : "" %><br /><span class="muted"><%= u.email %></span></td>
+            <td>
+              <form method="post" action="/admin/users/<%= u._id %>/role" style="display:flex;gap:6px">
+                <select name="role" aria-label="Role" <%= me ? "disabled" : "" %>>
+                  <% roles.forEach(function (r) { %><option value="<%= r %>" <%= (u.role || "admin") === r ? "selected" : "" %>><%= r %></option><% }); %>
+                </select>
+                <% if (!me) { %><button class="btn btn-ghost btn-sm" type="submit">Save</button><% } %>
+              </form>
+            </td>
+            <td class="muted"><%= u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "never" %></td>
+            <td style="text-align:right">
+              <% if (!me) { %>
+                <form method="post" action="/admin/users/<%= u._id %>/delete" onsubmit="return confirm('Delete this user?')" style="display:inline">
+                  <button class="btn-danger" type="submit">Delete</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table></div></div>
+  </div>
+</main>
+</body>
+</html>

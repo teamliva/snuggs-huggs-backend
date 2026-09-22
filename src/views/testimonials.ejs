@@ -1,0 +1,124 @@
+<%- include("partials/head") %>
+<%- include("partials/nav") %>
+
+<main>
+  <div class="wrap">
+    <h1>Testimonials</h1>
+    <p class="sub">
+      Published testimonials appear on the website automatically. Nothing goes live until you
+      publish it.
+    </p>
+
+    <% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+    <% if (error) { %><div class="flash err"><%= error %></div><% } %>
+
+    <div class="card">
+      <div class="inner">
+        <h2>Add a testimonial</h2>
+        <form method="post" action="/admin/testimonials">
+          <div class="row">
+            <div>
+              <label for="quote">Quote</label>
+              <textarea id="quote" name="quote" required
+                placeholder="What the family said, in their words."></textarea>
+            </div>
+          </div>
+
+          <div class="row three">
+            <div>
+              <label for="name">Name</label>
+              <input id="name" name="name" type="text" required placeholder="e.g. Karen M." />
+            </div>
+            <div>
+              <label for="relation">Relationship</label>
+              <input id="relation" name="relation" type="text" placeholder="Daughter of a client" />
+            </div>
+            <div>
+              <label for="rating">Rating</label>
+              <select id="rating" name="rating">
+                <% [5,4,3,2,1].forEach(function (r) { %>
+                  <option value="<%= r %>"><%= r %> star<%= r === 1 ? "" : "s" %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+
+          <div class="check">
+            <input id="consentOnFile" name="consentOnFile" type="checkbox" />
+            <label for="consentOnFile">
+              I have this family's permission to publish their words
+            </label>
+          </div>
+          <div class="check">
+            <input id="published" name="published" type="checkbox" />
+            <label for="published">Publish on the website now</label>
+          </div>
+
+          <button class="btn btn-primary" type="submit" style="margin-top:10px">
+            Add testimonial
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <% if (!items.length) { %>
+        <div class="empty">
+          <p style="margin:0 0 6px"><strong>No testimonials yet.</strong></p>
+          <p class="muted" style="margin:0">
+            The website's testimonial section stays hidden until at least one is published.
+          </p>
+        </div>
+      <% } else { %>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Quote</th><th>From</th><th>Rating</th>
+                <th>Consent</th><th>Status</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% items.forEach(function (t) { %>
+                <tr>
+                  <td style="max-width:360px">&ldquo;<%= t.quote %>&rdquo;</td>
+                  <td>
+                    <strong><%= t.name %></strong>
+                    <% if (t.relation) { %><br /><span class="muted"><%= t.relation %></span><% } %>
+                  </td>
+                  <td><%= t.rating %>/5</td>
+                  <td>
+                    <span class="pill <%= t.consentOnFile ? 'badge-on' : 'badge-off' %>">
+                      <%= t.consentOnFile ? "on file" : "not recorded" %>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="pill <%= t.published ? 'badge-on' : 'badge-off' %>">
+                      <%= t.published ? "live" : "draft" %>
+                    </span>
+                  </td>
+                  <td style="text-align:right;white-space:nowrap">
+                    <form method="post" action="/admin/testimonials/<%= t._id %>/toggle"
+                          style="display:inline">
+                      <button class="btn btn-ghost btn-sm" type="submit">
+                        <%= t.published ? "Unpublish" : "Publish" %>
+                      </button>
+                    </form>
+                    <form method="post" action="/admin/testimonials/<%= t._id %>/delete"
+                          style="display:inline"
+                          onsubmit="return confirm('Delete this testimonial?')">
+                      <button class="btn-danger" type="submit">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>

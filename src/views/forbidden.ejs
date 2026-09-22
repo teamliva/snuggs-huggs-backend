@@ -1,0 +1,11 @@
+<%- include("partials/head") %>
+<%- include("partials/nav") %>
+<main>
+  <div class="wrap" style="max-width:640px">
+    <h1>Not allowed</h1>
+    <p class="sub"><%= typeof message !== "undefined" && message ? message : "Your account doesn't have permission to open this page." %></p>
+    <a class="btn btn-ghost" href="/admin/blog">Back to the blog</a>
+  </div>
+</main>
+</body>
+</html>

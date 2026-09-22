@@ -1,0 +1,103 @@
+<%- include("partials/head") %>
+<%- include("partials/nav") %>
+
+<main>
+  <div class="wrap" style="max-width:820px">
+    <p class="muted" style="margin-bottom:10px"><a href="/admin">&larr; All enquiries</a></p>
+
+    <h1><%= lead.name %></h1>
+    <p class="sub">
+      Received <%= new Date(lead.createdAt).toLocaleString("en-US", {
+        dateStyle: "long", timeStyle: "short" }) %>
+    </p>
+
+    <div class="card">
+      <div class="inner">
+        <h2>Contact</h2>
+        <div class="row two">
+          <div>
+            <label>Phone</label>
+            <p style="margin:0">
+              <a href="tel:<%= lead.phone.replace(/[^\d+]/g, "") %>"
+                 style="font-size:1.15rem;font-weight:600"><%= lead.phone %></a>
+            </p>
+          </div>
+          <div>
+            <label>Email</label>
+            <p style="margin:0">
+              <% if (lead.email) { %>
+                <a href="mailto:<%= lead.email %>"><%= lead.email %></a>
+              <% } else { %><span class="muted">Not provided</span><% } %>
+            </p>
+          </div>
+        </div>
+
+        <div class="row two">
+          <div>
+            <label>Prefers to be contacted by</label>
+            <p style="margin:0"><%= lead.preferredContact %></p>
+          </div>
+          <div>
+            <label>Care level of interest</label>
+            <p style="margin:0"><%= lead.carePlan %></p>
+          </div>
+        </div>
+
+        <% if (lead.message) { %>
+          <label style="margin-top:8px">Their message</label>
+          <p style="margin:0;white-space:pre-wrap;background:var(--cream-200);
+                    padding:14px;border-radius:9px"><%= lead.message %></p>
+        <% } %>
+      </div>
+    </div>
+
+    <form method="post" action="/admin/leads/<%= lead._id %>">
+      <div class="card">
+        <div class="inner">
+          <h2>Follow-up</h2>
+
+          <div class="row two">
+            <div>
+              <label for="status">Status</label>
+              <select id="status" name="status">
+                <% statuses.forEach(function (s) { %>
+                  <option value="<%= s %>" <%= lead.status === s ? "selected" : "" %>>
+                    <%= s.replace(/_/g, " ") %>
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="notes">Internal notes</label>
+              <textarea id="notes" name="notes"
+                placeholder="What was discussed, what happens next…"><%= lead.notes %></textarea>
+              <p class="muted" style="margin:6px 0 0">Only ever visible here — never on the website.</p>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" type="submit">Save</button>
+        </div>
+      </div>
+    </form>
+
+    <div class="card">
+      <div class="inner">
+        <h2 style="margin-bottom:8px">Record</h2>
+        <p class="muted" style="margin:0 0 14px">
+          Submitted from <span class="mono"><%= lead.meta?.ip || "unknown" %></span>
+          · source <%= lead.meta?.source || "website" %>
+        </p>
+        <form method="post" action="/admin/leads/<%= lead._id %>/delete"
+              onsubmit="return confirm('Delete this enquiry permanently? This cannot be undone.')">
+          <button class="btn-danger" type="submit">Delete this enquiry</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>
