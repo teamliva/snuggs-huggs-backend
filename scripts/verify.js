@@ -346,7 +346,7 @@ Read our [care options](/#care) or book a [free consultation](/#consultation).`;
   r = await jsonReq("POST", "/api/admin/blog/link-suggestions", { title: "Memory loss", content: "Supporting a parent with dementia and memory loss at home." });
   body = await json(r);
   check("link suggestions include a conversion page", body.items?.some((s) => s.url === "/#consultation"));
-  check("link suggestions include the relevant service page", body.items?.some((s) => s.url === "/#specialties"));
+  check("link suggestions include the relevant service page", body.items?.some((s) => s.url === "/services/dementia-care"));
 
   console.log("\nBlog — uploads");
 
@@ -359,9 +359,14 @@ Read our [care options](/#care) or book a [free consultation](/#consultation).`;
   };
   r = await upload(png, "pixel.png", "image/png");
   body = await json(r);
-  check("accepts a real PNG and stores it under a random name", r.status === 201 && /^\/uploads\/\d{4}\/\d{2}\/[0-9a-f]{24}\.png$/.test(body.item?.url || ""), body.item?.url);
+  check("accepts a real PNG and names it from its alt text", r.status === 201 && /^\/uploads\/\d{4}\/\d{2}\/test-image-[0-9a-f]{8}\.png$/.test(body.item?.url || ""), body.item?.url);
   r = await fetch(`${BASE}${body.item.url}`);
   check("serves uploads with nosniff", r.status === 200 && r.headers.get("x-content-type-options") === "nosniff");
+  const noAlt = new FormData();
+  noAlt.append("file", new Blob([png], { type: "image/png" }), "../../Sunset Walk <script>.png");
+  r = await fetch(`${BASE}/api/admin/blog/media`, { method: "POST", headers: auth, body: noAlt });
+  body = await json(r);
+  check("without alt text, names it from the sanitised original name", r.status === 201 && /^\/uploads\/\d{4}\/\d{2}\/sunset-walk-script-[0-9a-f]{8}\.png$/.test(body.item?.url || ""), body.item?.url);
   r = await upload(Buffer.from("<?php echo 'hi'; ?>"), "shell.png", "image/png");
   check("rejects a non-image disguised as .png", r.status === 400);
   r = await upload(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>'), "x.svg", "image/svg+xml");

@@ -7,15 +7,20 @@ import { imageSize } from "image-size";
 import { env } from "../config/env.js";
 import { Media } from "../models/blog.js";
 import { HttpError } from "../middleware/errors.js";
+import { slugify } from "./text.js";
 
 /**
  * Image uploads.
  *
  * Trust nothing the client says about a file. The browser-supplied MIME
- * type and filename are ignored; the type is decided by the file's actual
- * leading bytes, the stored name is random, and only raster formats are
- * accepted. SVG is deliberately excluded: it can carry script and would be
- * served from the same origin as the admin.
+ * type is ignored; the type is decided by the file's actual leading bytes,
+ * and only raster formats are accepted. SVG is deliberately excluded: it
+ * can carry script and would be served from the same origin as the admin.
+ *
+ * The stored name is descriptive for image search — built from the alt
+ * text (or, failing that, the original file name) — but reduced to
+ * [a-z0-9-] by slugify(), so nothing the client sends can reach the file
+ * system, and suffixed with random hex so names never collide.
  */
 
 export const UPLOAD_ROOT = path.resolve(env.UPLOAD_DIR);
@@ -27,6 +32,16 @@ const SIGNATURES = [
   { mime: "image/webp", ext: "webp", test: (b) => b.subarray(0, 4).toString("ascii") === "RIFF" && b.subarray(8, 12).toString("ascii") === "WEBP" },
   { mime: "image/avif", ext: "avif", test: (b) => b.subarray(4, 12).toString("ascii").startsWith("ftypavi") },
 ];
+
+/**
+ * "A caregiver reading with a client" -> "a-caregiver-reading-with-a-client".
+ * Empty when the text has no usable words — slugify() itself would return
+ * its "post" placeholder there, which is no description of an image.
+ */
+function fileDescription(text) {
+  const hasWords = /[a-z0-9]/.test(String(text || "").normalize("NFKD").toLowerCase());
+  return hasWords ? slugify(text, { maxLength: 60 }) : "";
+}
 
 export const uploadMiddleware = multer({
   storage: multer.memoryStorage(),
@@ -68,7 +83,9 @@ export async function storeImage(file, { alt = "", userId } = {}) {
 
   const now = new Date();
   const sub = path.join(String(now.getUTCFullYear()), String(now.getUTCMonth() + 1).padStart(2, "0"));
-  const filename = `${crypto.randomBytes(12).toString("hex")}.${kind.ext}`;
+  const originalBase = String(file.originalname || "").replace(/\.[^.]*$/, "");
+  const description = fileDescription(alt) || fileDescription(originalBase) || "image";
+  const filename = `${description}-${crypto.randomBytes(4).toString("hex")}.${kind.ext}`;
   const dir = path.join(UPLOAD_ROOT, sub);
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, filename), file.buffer, { flag: "wx" });
