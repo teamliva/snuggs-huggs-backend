@@ -7,6 +7,7 @@
  * Run against the local dev database (backend must already be running):
  *   node scripts/with-local-db.js scripts/seed-blog-posts.mjs
  */
+import { randomBytes } from "node:crypto";
 import { connectDb, disconnectDb } from "../src/config/db.js";
 import { AdminUser } from "../src/models/AdminUser.js";
 import { Category, Author } from "../src/models/blog.js";
@@ -26,11 +27,15 @@ async function ensureAdmin() {
   const email = "content@snuggsandhuggsseniorservices.com";
   let admin = await AdminUser.findOne({ email });
   if (!admin) {
+    // Only used as the createdBy/updatedBy attribution on seeded posts —
+    // nobody needs to log in as this account, so a random password (never
+    // logged, never committed) is safer than a fixed one in source control.
+    const password = randomBytes(24).toString("hex");
     admin = await AdminUser.create({
       email,
       name: "Content Team",
       role: "admin",
-      passwordHash: await AdminUser.hashPassword("LocalSeedAdmin2026!"),
+      passwordHash: await AdminUser.hashPassword(password),
     });
     console.log(`Created local admin account: ${email}`);
   }
