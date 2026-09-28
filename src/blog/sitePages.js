@@ -82,8 +82,14 @@ export const SITE_PAGES = [
   },
   {
     title: "Frequently asked questions",
-    url: "/#faq",
+    url: "/faq",
     type: "page",
-    terms: ["faq", "questions", "service area", "seattle", "how much", "24/7"],
+    terms: ["faq", "questions", "service area", "seattle", "how much", "24/7", "non-medical", "home health"],
+  },
+  {
+    title: "Caregiver careers at Snuggs & Huggs",
+    url: "/careers",
+    type: "page",
+    terms: ["careers", "jobs", "hiring", "caregiver jobs", "apply", "join the team", "work for us", "employment"],
   },
 ];
