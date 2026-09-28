@@ -8,14 +8,7 @@ import { z } from "zod";
  */
 const schema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  // On Vercel this can arrive as "" rather than being unset, which would
-  // otherwise coerce to 0 and fail .positive() on every cold start. Treat
-  // blank the same as unset so the default applies; a real bad value (e.g.
-  // "-1" or "abc") still fails validation as before.
-  PORT: z.preprocess(
-    (v) => (v === "" ? undefined : v),
-    z.coerce.number().int().positive().default(4000)
-  ),
+  PORT: z.coerce.number().int().positive().default(4000),
 
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required (see .env.example)"),
 
@@ -84,7 +77,17 @@ const schema = z.object({
   AI_MODEL: z.string().default("claude-opus-5"),
 });
 
-const parsed = schema.safeParse(process.env);
+// Vercel's dashboard sends a variable you left blank as "" rather than
+// omitting it, which isn't the same thing to zod: .optional()/.default()
+// only kick in for undefined, so an empty string still fails .positive(),
+// .enum(...), .url() etc. This bit PORT, then SMTP_PORT and SMTP_SECURE —
+// rather than special-casing each field as it comes up, treat every blank
+// value as unset before validating.
+const rawEnv = Object.fromEntries(
+  Object.entries(process.env).map(([k, v]) => [k, v === "" ? undefined : v])
+);
+
+const parsed = schema.safeParse(rawEnv);
 
 if (!parsed.success) {
   const issues = parsed.error.issues
