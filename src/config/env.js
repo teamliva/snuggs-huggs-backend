@@ -8,7 +8,14 @@ import { z } from "zod";
  */
 const schema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  PORT: z.coerce.number().int().positive().default(4000),
+  // On Vercel this can arrive as "" rather than being unset, which would
+  // otherwise coerce to 0 and fail .positive() on every cold start. Treat
+  // blank the same as unset so the default applies; a real bad value (e.g.
+  // "-1" or "abc") still fails validation as before.
+  PORT: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.coerce.number().int().positive().default(4000)
+  ),
 
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required (see .env.example)"),
 
@@ -59,9 +66,16 @@ const schema = z.object({
   // frontend's REVALIDATE_SECRET. Optional.
   REVALIDATE_SECRET: z.string().min(16).optional(),
 
-  // Where uploaded images are stored on disk.
+  // Where uploaded images are stored on disk when BLOB_READ_WRITE_TOKEN
+  // (below) isn't set — local dev only, since Vercel's filesystem doesn't
+  // persist across invocations.
   UPLOAD_DIR: z.string().default("uploads"),
   UPLOAD_MAX_MB: z.coerce.number().positive().max(25).default(5),
+
+  // Vercel Blob store token. Set automatically when Blob storage is
+  // enabled on the Vercel project; unset in local dev, where uploads fall
+  // back to local disk instead.
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
 
   // Optional AI-assisted SEO suggestions. Without a key the editor uses
   // the built-in heuristics, so nothing depends on this. The key is read
@@ -83,5 +97,6 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 export const isProd = env.NODE_ENV === "production";
+export const blobEnabled = Boolean(env.BLOB_READ_WRITE_TOKEN);
 export const mailEnabled = Boolean(env.SMTP_HOST && env.MAIL_TO);
 export const aiEnabled = Boolean(env.ANTHROPIC_API_KEY);

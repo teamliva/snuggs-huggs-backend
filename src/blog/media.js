@@ -3,8 +3,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import multer from "multer";
 import { imageSize } from "image-size";
+import { put, del } from "@vercel/blob";
 
-import { env } from "../config/env.js";
+import { env, blobEnabled } from "../config/env.js";
 import { Media } from "../models/blog.js";
 import { HttpError } from "../middleware/errors.js";
 import { slugify } from "./text.js";
@@ -82,16 +83,33 @@ export async function storeImage(file, { alt = "", userId } = {}) {
   }
 
   const now = new Date();
-  const sub = path.join(String(now.getUTCFullYear()), String(now.getUTCMonth() + 1).padStart(2, "0"));
+  const sub = path.join(String(now.getUTCFullYear()), String(now.getUTCMonth() + 1).padStart(2, "0")).replace(/\\/g, "/");
   const originalBase = String(file.originalname || "").replace(/\.[^.]*$/, "");
   const description = fileDescription(alt) || fileDescription(originalBase) || "image";
   const filename = `${description}-${crypto.randomBytes(4).toString("hex")}.${kind.ext}`;
-  const dir = path.join(UPLOAD_ROOT, sub);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, filename), file.buffer, { flag: "wx" });
+
+  // Vercel's filesystem doesn't persist across invocations or deployments,
+  // so production stores images in Vercel Blob instead. Local dev has no
+  // token configured and keeps writing to disk — no setup required to run
+  // the app locally.
+  let url;
+  if (blobEnabled) {
+    const blob = await put(`${sub}/${filename}`, file.buffer, {
+      access: "public",
+      addRandomSuffix: false, // filename above is already unique
+      contentType: kind.mime,
+      token: env.BLOB_READ_WRITE_TOKEN,
+    });
+    url = blob.url;
+  } else {
+    const dir = path.join(UPLOAD_ROOT, sub);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, filename), file.buffer, { flag: "wx" });
+    url = `/uploads/${sub}/${filename}`;
+  }
 
   return Media.create({
-    url: `/uploads/${sub.replace(/\\/g, "/")}/${filename}`,
+    url,
     filename,
     originalName: String(file.originalname || "").slice(0, 200),
     mime: kind.mime,
@@ -106,10 +124,19 @@ export async function storeImage(file, { alt = "", userId } = {}) {
 export async function deleteMedia(id) {
   const m = await Media.findById(id);
   if (!m) throw new HttpError(404, "Image not found");
-  const rel = m.url.replace(/^\/uploads\//, "");
-  const file = path.resolve(UPLOAD_ROOT, rel);
-  // Guard against a crafted url escaping the upload directory.
-  if (!file.startsWith(UPLOAD_ROOT + path.sep)) throw new HttpError(400, "Invalid media path");
-  await fs.rm(file, { force: true });
+
+  // Blob uploads are stored as absolute URLs; local fallback uploads as
+  // "/uploads/...". Dispatch on that instead of a stored flag so media
+  // created before this migration (still on disk) keeps working.
+  if (/^https?:\/\//.test(m.url)) {
+    await del(m.url, { token: env.BLOB_READ_WRITE_TOKEN });
+  } else {
+    const rel = m.url.replace(/^\/uploads\//, "");
+    const file = path.resolve(UPLOAD_ROOT, rel);
+    // Guard against a crafted url escaping the upload directory.
+    if (!file.startsWith(UPLOAD_ROOT + path.sep)) throw new HttpError(400, "Invalid media path");
+    await fs.rm(file, { force: true });
+  }
+
   await m.deleteOne();
 }
